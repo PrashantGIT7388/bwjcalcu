@@ -1155,10 +1155,11 @@
   }
   
   // NEW: Distribute based on MAKING CHARGE PERCENTAGES for silver
-  function applySilverGrandTotal() {
+
+function applySilverGrandTotal() {
     var silverItems = [];
     for(var i=0; i<billItems.length; i++) {
-      if(billItems[i].isSilver) silverItems.push(billItems[i]);
+        if(billItems[i].isSilver) silverItems.push(billItems[i]);
     }
     if(silverItems.length === 0) { alert("No silver items"); return; }
     
@@ -1169,37 +1170,60 @@
     for(var i=0; i<silverItems.length; i++) currentTotal += silverItems[i].finalPrice;
     if(target === currentTotal) { alert("Same as current"); return; }
     
+    // Calculate total metal value for silver items
+    var totalMetalValue = 0;
+    for(var i=0; i<silverItems.length; i++) totalMetalValue += silverItems[i].itemValue;
+    
     // Calculate total original making charge for silver items
     var totalOriginalMaking = 0;
     for(var i=0; i<silverItems.length; i++) totalOriginalMaking += silverItems[i].originalMakingCharge;
     
     if(totalOriginalMaking === 0) {
-      alert("Total making charge is zero. Cannot distribute based on making percentages.");
-      return;
+        alert("Total making charge is zero. Cannot distribute based on making percentages.");
+        return;
     }
     
-    // Calculate total metal value
-    var totalMetalValue = 0;
-    for(var i=0; i<silverItems.length; i++) totalMetalValue += silverItems[i].itemValue;
+    // CRITICAL: Check if silver items have GST or not
+    // Use the item's noGST flag to determine calculation
+    var hasGST = false;
+    for(var i=0; i<silverItems.length; i++) {
+        if(!silverItems[i].noGST) hasGST = true;
+    }
     
-    var totalMakingNeeded = target - totalMetalValue;
+    var totalMakingNeeded;
+    if(hasGST) {
+        // Silver items have GST
+        var targetBeforeGST = target / 1.03;
+        totalMakingNeeded = targetBeforeGST - totalMetalValue;
+    } else {
+        // Silver items have NO GST
+        totalMakingNeeded = target - totalMetalValue;
+    }
+    
     if(totalMakingNeeded < 0) { alert("Target below total metal value"); return; }
     
     // Distribute based on ORIGINAL MAKING CHARGE PERCENTAGES
     for(var i=0; i<silverItems.length; i++) {
-      var item = silverItems[i];
-      var makingPercentage = item.originalMakingCharge / totalOriginalMaking;
-      var newMaking = totalMakingNeeded * makingPercentage;
-      
-      var newFinal = item.itemValue + newMaking;
-      
-      silverAdjustData[item.id] = { desiredFinal: newFinal, newMaking: newMaking, newFinal: newFinal };
+        var item = silverItems[i];
+        var makingPercentage = item.originalMakingCharge / totalOriginalMaking;
+        var newMaking = totalMakingNeeded * makingPercentage;
+        
+        var newFinal;
+        if(item.noGST) {
+            newFinal = item.itemValue + newMaking;
+        } else {
+            newFinal = Math.round((item.itemValue + newMaking) * 1.03 / 10) * 10;
+        }
+        
+        silverAdjustData[item.id] = { desiredFinal: newFinal, newMaking: newMaking, newFinal: newFinal };
     }
     
     renderSilverAdjustTable();
-    alert('Silver total adjusted from ₹' + currentTotal.toFixed(2) + ' to ₹' + target.toFixed(2) + '\nDistribution based on original making charge percentages.');
-  }
-  
+    var newTotal = 0;
+    for(var i=0; i<silverItems.length; i++) newTotal += silverAdjustData[silverItems[i].id].newFinal;
+    alert('Silver total adjusted from ₹' + currentTotal.toFixed(2) + ' to ₹' + newTotal.toFixed(2));
+}
+
   function resetSilverAdjustments() { silverAdjustData = {}; renderSilverAdjustTable(); document.getElementById('silverGrandTotalInput').value = 0; }
 
   function renderAllTables() {
