@@ -607,7 +607,10 @@
   <div class="bill-card">
     <div class="bill-header"><h3>🧾 Bill Register</h3><button id="clearAllBtn" class="btn-clear">🗑️ Clear All</button></div>
     <div id="billContainer" class="bill-table-wrapper"><div class="empty-bill" style="text-align:center; padding:2rem;">✨ No items added.</div></div>
-    <div class="grand-total" id="grandTotalDisplay">💰 Grand Total (incl. GST): ₹ 0.00</div>
+   <div class="grand-total" style="display: flex; justify-content: space-between;" id="grandTotalDisplay">
+    <span>🔴 Grand Total (incl. GST):</span>
+    <span style="padding-right: 30px;">₹ 0.00</span>
+</div>
   </div>
 
   <!-- GOLD ADJUSTMENT SECTION -->
